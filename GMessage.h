@@ -4,9 +4,9 @@
  */
  // Version 0.1
  // Requires C++17
- // 
+ //
  // Example:
- //   GMessage msg; 
+ //   GMessage msg;
  //   msg["name"] = "Andrea";
  //   msg["points"] = 1412;
  //   msg["active"] = true;
@@ -19,8 +19,6 @@
  // submessages:
  //	 GMessage msg3 = msg2;
  //	 msg["details"] = {{ {"id", 442}, {"cost", 78} }};
- 
-#define AUTO_WHAT 
 
 #pragma once
 #include <Message.h>
@@ -47,12 +45,13 @@ public:
 	explicit GMessage():BMessage() {};
 	explicit GMessage(uint32 what):BMessage(what){};
 	GMessage(variant_list n):BMessage() { _HandleVariantList(n); };
-	
-	// ~GMessage() {
-			 // printf("Deleting..(%x)", this); PrintToStream();
-	 // }
 
 	auto operator[](const char* key) -> GMessageReturn;
+
+	bool Has(const char* key) {
+		type_code type;
+		return (GetInfo(key, &type) == B_OK);
+	}
 
 private:
 	void _HandleVariantList(variant_list& list);
@@ -72,67 +71,6 @@ public:
 	static type_code	Type();
 };
 
-class GMessageReturn {
-public:
-		GMessageReturn(GMessage* msg, const char* key, GMessageReturn* parent = nullptr){ 
-			fMsg=msg; fKey=key; fSyncParent = parent;
-		}
-		
-		 ~GMessageReturn() {
-			if (fSyncParent) {
-				(*fSyncParent) = (*fMsg);
-				delete fMsg;
-			}
-		 }
-
-		template< typename Return >
-        operator Return() { return MessageValue<Return>::Get(fMsg, fKey); };
-
-		template< typename T >
-		void operator =(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
-		
-		void operator =(variant_list n);
-		
-		auto operator[](const char* key) -> GMessageReturn;
-
-		void operator =(GMessageReturn n) {
-			type_code typeFound;
-			if (n.fKey == fKey && fMsg == n.fMsg)
-				return;
-
-			if (n.fMsg->GetInfo(n.fKey, &typeFound) == B_OK) {
-
-				const void* data = nullptr;
-				ssize_t numBytes = 0;
-				if (n.fMsg->FindData(n.fKey, typeFound, &data, &numBytes) == B_OK) {
-					fMsg->RemoveName(fKey); //remove the key
-					fMsg->SetData(fKey, typeFound, data, numBytes);
-				}
-			}
-		}
-		
-		void Print() {
-			fMsg->PrintToStream();
-		}
-
-private:
-		GMessage* fMsg;
-		const char* fKey;
-		GMessageReturn* fSyncParent;
-};
-
-auto GMessage::operator[](const char* key) -> GMessageReturn { return GMessageReturn(this, key); }
-
-void GMessage::_HandleVariantList(variant_list& list) {
-	MakeEmpty();
-	auto i = list.begin();
-	while(i != list.end()) {
-		std::visit([&] (const auto& k) {
-			(*this)[(*i).key] = k;
-		}, (*i).value);
-		i++;
-	}
-}
 
 #define MESSAGE_VALUE(NAME, TYPE, typeCODE, DEFAULT) \
 template<> \
@@ -156,7 +94,7 @@ public: \
 						msg->RemoveName(key); \
 						msg->Add ## NAME (key, &value); } \
 	static type_code	Type() { return typeCODE; } \
-}; 
+};
 
 MESSAGE_VALUE(Bool, bool, B_BOOL_TYPE, false);
 MESSAGE_VALUE(String, const char*, B_STRING_TYPE, "");
@@ -165,46 +103,62 @@ MESSAGE_VALUE(UInt32, uint32, B_UINT32_TYPE, 0);
 MESSAGE_VALUE_REF(Message, GMessage, B_MESSAGE_TYPE, GMessage());
 MESSAGE_VALUE_REF(Message, BMessage, B_MESSAGE_TYPE, BMessage());
 
-//variant_list//
-/*template<>
-class MessageValue<variant_list> {
+class GMessageReturn {
 public:
-	static variant_list	Get(GMessage* msg, const char* key){
-							GMessage* newMsg = new GMessage();
-							msg->FindMessage(key, newMsg);
-							return newMsg; //BUG
-	}
-	static void	Set(GMessage* msg, const char* key, GMessage* value){
-							msg->RemoveName(key);
-							msg->AddMessage(key, value);
-	}
-	static type_code	Type() { return B_MESSAGE_TYPE; }
-};*/
-/*
-template<>
-class MessageValue<GMessage*> {
-public:
-	static GMessage*	Get(GMessage* msg, const char* key){
-							GMessage* newMsg = new GMessage();
-							msg->FindMessage(key, newMsg);
-							return newMsg; //BUG
-	}
-	static void	Set(GMessage* msg, const char* key, GMessage* value){
-							msg->RemoveName(key);
-							msg->AddMessage(key, value);
-	}
-	static type_code	Type() { return B_MESSAGE_TYPE; }
-};*/
- 
+		GMessageReturn(GMessage* msg, const char* key, GMessageReturn* parent = nullptr){
+			fMsg=msg; fKey=key; fSyncParent = parent;
+		}
 
-void GMessageReturn::operator =(variant_list n) {
-	GMessage xmsg(n);
-	MessageValue<GMessage>::Set(fMsg, fKey, xmsg);
-}	
+		 ~GMessageReturn() {
+			if (fSyncParent) {
+				(*fSyncParent) = (*fMsg);
+				delete fMsg;
+			}
+		 }
 
+		template< typename Return >
+        operator Return() { return MessageValue<Return>::Get(fMsg, fKey); };
 
-auto GMessageReturn::operator[](const char* key) -> GMessageReturn {
-	GMessage* newMsg = new GMessage();
-	fMsg->FindMessage(fKey, newMsg);
-	return GMessageReturn(newMsg, key, this);
+		template< typename T >
+		void operator =(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
+
+		void operator =(variant_list n){
+				GMessage xmsg(n);
+				MessageValue<GMessage>::Set(fMsg, fKey, xmsg);
+		}
+
+		auto operator[](const char* key) -> GMessageReturn {
+			GMessage* newMsg = new GMessage();
+			fMsg->FindMessage(fKey, newMsg);
+			return GMessageReturn(newMsg, key, this);
+		};
+
+		void operator =(GMessageReturn n) {
+			type_code typeFound;
+			if (n.fKey == fKey && fMsg == n.fMsg)
+				return;
+
+			if (n.fMsg->GetInfo(n.fKey, &typeFound) == B_OK) {
+
+				const void* data = nullptr;
+				ssize_t numBytes = 0;
+				if (n.fMsg->FindData(n.fKey, typeFound, &data, &numBytes) == B_OK) {
+					fMsg->RemoveName(fKey); //remove the key
+					fMsg->SetData(fKey, typeFound, data, numBytes);
+				}
+			}
+		}
+
+		void Print() {
+			fMsg->PrintToStream();
+		}
+
+private:
+		GMessage* fMsg;
+		const char* fKey;
+		GMessageReturn* fSyncParent;
 };
+
+
+
+

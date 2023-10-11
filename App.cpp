@@ -1,54 +1,27 @@
-#include <stdio.h>
-#include "GMessage.h"
+/*
+ * Copyright 2018, Your Name <your@email.address>
+ * All rights reserved. Distributed under the terms of the MIT license.
+ */
+
+
+#include "App.h"
 #include "ConfigManager.h"
 
-void testGMessage() {
-
- GMessage msg;
- msg["name"] = "Andrea";
- msg["points"] = 1412;
- msg["active"] = true;
-
- printf("Points: %d\n", (int32)msg["points"]);
-
- msg.PrintToStream();
-
- GMessage msg1 = {{ {"name", "Andrea"}, {"points", 1412}, {"active", true} }};
-
- msg1.PrintToStream();
-
- GMessage msg2 = msg1;
- msg2["details"] = {{ {"id", 442}, {"cost", 78} }};
- GMessage x = msg2["details"];
- int i = msg2["details"]["id"];
- printf("qui---\n");
- msg2["details"]["ixx"] = true;
- msg2["details"]["ixx"]["subxx"] = true;
-
- auto ret =  msg2["details"]["ixx"];
- ret.Print();
- ret = true;
- ret.Print();
- printf("ret = %d --\n", i );
- msg2.PrintToStream();
-
- GMessage msgC = {{ {"key", "build_on_save"} }};
- msgC["complex"]["nested"]["structure"] = {{ {"min", 0}, {"max", 100} }};
- msgC.PrintToStream();
-  msgC["complex"]["nested"]["structure"]["max"] = 9999;
-  msgC.PrintToStream();
-
- GMessage msg13({{{ {"what", 12}, {"total", 1}, {"unread", 1}, {"new", 1} }}});
- auto msg14 = new GMessage({{{ {"what", 12}, {"total", 1}, {"unread", 1}, {"new", 1} }}});
+App::App(): BApplication("application/x-vnd.message-config")
+{
 }
 
+
+
 void
-testConfigManager() {
+App::ReadyToRun()
+ {
+	//	Initialization
 	ConfigManager cfg;
 
 	GMessage powerExtra = {{ {"min", 0}, {"max", 100} }};
 	cfg.AddConfig("power", "Energy to use", 75, &powerExtra);
-	
+
 	GMessage compilerExtra = {{ {"mode", "choise"} }};
 	compilerExtra["choice_1"]["value"] = "gcc";
 	compilerExtra["choice_1"]["description"] = "gcc";
@@ -57,19 +30,47 @@ testConfigManager() {
 
 	cfg.AddConfig("compiler", "Compiler to use", "gcc", &compilerExtra);
 
-	cfg.AddConfig("active", "Use new engine", false);
+	cfg.AddConfig("active", "Use new engine", true);
 	cfg.ResetToDefault();
-	
+
 	cfg.Print();
-	
-	cfg.CreateView();
-}
 
 
-int
-main(int argc, char **argv)
-{
-	testGMessage();
-	testConfigManager();
-	return 0;
+
+	// Settings settings;
+	// settings.AddBoolSetting("test bool", "Bool 1", true, "first");
+	// settings.AddIntSetting("test int", "Int 1", 99, "first");
+	// settings.AddStringSetting("test string", "String", "foobar", "first");
+	//
+	// settings.AddBoolSetting("test bool 2", "Boolean 2", false, "second");
+	// settings.AddIntSetting("test int 2", "INT 2", 99, "second");
+	// settings.AddStringSetting("test string 2", "Test String 2", "foobar", "second");
+	// status_t status = settings.Initialize();
+	// if (status != B_OK) {
+		// std::cerr << "Failed to initialize settings: " << ::strerror(status) << std::endl;
+		// exit(-1);
+	// }
+	//
+	//Load from file
+	// settings.Load("/home/settings_test");
+	//
+	//Usage
+	// bool test = settings.GetBool("test bool");
+	// assert(test == true);
+	//
+	// settings.SetBool("test bool", false);
+	// test = settings.GetBool("test bool");
+	// assert(test == false);
+	//
+	// int32 intValue = settings.GetInt("test int");
+	// assert(intValue == 99);
+	//
+	// BString stringValue = settings.GetString("test string");
+	// assert(strcmp(stringValue.String(), "foobar") == 0);
+
+	 BWindow* window = new BWindow(BRect(100, 100, 400, 400), "test", B_TITLED_WINDOW,
+		 B_ASYNCHRONOUS_CONTROLS|B_NOT_RESIZABLE|B_NOT_ZOOMABLE|B_QUIT_ON_WINDOW_CLOSE);
+	 window->SetLayout(new BGroupLayout(B_HORIZONTAL));
+	 window->AddChild(cfg.MakeView());
+	 window->Show();
 }

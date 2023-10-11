@@ -1,6 +1,9 @@
 #pragma once
 #include "GMessage.h"
 
+class BView;
+class BControl;
+
 class ConfigManager {
 
 public:
@@ -43,14 +46,16 @@ public:
 			return storage[key];
 		}
 
-		void CreateView() {
-			GMessage msg;
-			int i=0;
-			while(configuration.FindMessage("config", i++, &msg) == B_OK) {
-				type_code type = msg["type_code"];
-				printf("New BView here for key: %s, type %d\n", (const char*)msg["key"], type);				
-			}
+		bool Has(GMessage& msg, const char* key) {
+			type_code type;
+			return (msg.GetInfo(key, &type) == B_OK);
 		}
+
+		BView* MakeView();
+		BView* MakeViewFor(const char* groupName, GMessage& config);
+		BView* MakeSelfHostingViewFor(GMessage& config);
+		BView* MakeViewFor(GMessage& config);
+
 
 protected:
 		GMessage storage;
