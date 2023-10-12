@@ -10,16 +10,20 @@ public:
 		void	Init();
 
 		template<typename T>
-		void AddConfig(const char* key, const char* description, T default_value, BMessage* extra = nullptr) {
+		void AddConfig(const char* group, const char* key, const char* label, T default_value, GMessage* cfg = nullptr) {
 			GMessage configKey;
+			if (cfg)
+				configKey = *cfg;
+
+			configKey["group"]			= group;
 			configKey["key"]			= key;
-			configKey["description"]    = description;
+			configKey["label"]    		= label;
 			configKey["default_value"]  = default_value;
-			configKey["type_code"] = MessageValue<T>::Type();
-			if (extra)
-				configKey["extra"] = *extra;
+			configKey["type_code"] 		= MessageValue<T>::Type();
 
 			configuration.AddMessage("config", &configKey);
+
+			configKey.PrintToStream();
 
 		}
 

@@ -12,7 +12,8 @@
 #include <GroupView.h>
 #include <Layout.h>
 #include <SpaceLayoutItem.h>
-
+#include <list>
+#include <map>
 BView*
 ConfigManager::MakeView()
 {
@@ -22,13 +23,20 @@ ConfigManager::MakeView()
 
 	BTabView *tabView = new BTabView("config");
 
+	std::map<std::string, GMessage> divededByGroup;
 	GMessage msg;
 	int i=0;
 	while(configuration.FindMessage("config", i++, &msg) == B_OK)  {
+		//printf("Adding for %s\n", (const char*)msg["group"]);
+		divededByGroup[(const char*)msg["group"]].AddMessage("config", &msg);
+	}
 
-		BView *groupView = MakeViewFor(msg["key"], msg);
+	std::map<std::string, GMessage>::iterator iter = divededByGroup.begin();
+	while(iter != divededByGroup.end())  {
+		printf("Working for %s\n", iter->first.c_str());
+		BView *groupView = MakeViewFor(iter->first.c_str(), iter->second);
 		if (groupView == NULL) {
-			printf("Skipping for %s\n", (const char*)msg["key"]);
+			printf("Skipping for %s\n", iter->first.c_str());
 			continue;
 		}
 
@@ -38,6 +46,7 @@ ConfigManager::MakeView()
 			B_H_SCROLL_BAR_HEIGHT));
 
 		tabView->AddTab(scrollView);
+		iter++;
 
 	}
 
@@ -57,39 +66,34 @@ ConfigManager::MakeView()
 
 
 BView*
-ConfigManager::MakeViewFor(const char* groupName, GMessage& config)
+ConfigManager::MakeViewFor(const char* groupName, GMessage& list)
 {
-	printf("Making for %s\n", (const char*)config["key"]);
+	// printf("Making for %s\n", (const char*)config["key"]);
 	// Create and add the setting views
 	BGroupView *view = new BGroupView(groupName, B_HORIZONTAL,
 		B_USE_HALF_ITEM_SPACING);
 	BGroupLayout *layout = view->GroupLayout();
 	layout->SetInsets(B_USE_HALF_ITEM_INSETS);
 
-	//std::pair<SettingsGroups::iterator, SettingsGroups::iterator> groupIter = fSettingsGroups.equal_range(groupName);
-	//SettingsGroups::iterator settingIter;
-	if ( true) {
-		BGroupView *settingView = new BGroupView(groupName, B_VERTICAL,
-			B_USE_HALF_ITEM_SPACING);
-		BGroupLayout *settingLayout = settingView->GroupLayout();
-		settingLayout->SetInsets(B_USE_HALF_ITEM_INSETS);
+	BGroupView *settingView = new BGroupView(groupName, B_VERTICAL,
+		B_USE_HALF_ITEM_SPACING);
+	BGroupLayout *settingLayout = settingView->GroupLayout();
+	settingLayout->SetInsets(B_USE_HALF_ITEM_INSETS);
 
-		/*for (settingIter = groupIter.first; settingIter != groupIter.second; settingIter++) {
-			std::cout << "groupName: " << settingIter->first << ", setting: " << settingIter->second << std::endl;
-			Setting *setting = fSettingsMap[settingIter->second];
-			if (setting == NULL)
-				continue;*/
+	GMessage msg;
+	int i=0;
+	while(configuration.FindMessage("config", i++, &msg) == B_OK)  {
 
 //			std::cout << "Setting name: " << setting << std::endl;
-			BView *parameterView = MakeSelfHostingViewFor(config);
-			if (parameterView == NULL)
-				return nullptr;
+		BView *parameterView = MakeSelfHostingViewFor(msg);
+		if (parameterView == NULL)
+			return nullptr;
 
-			settingLayout->AddView(parameterView);
-		//}
+		settingLayout->AddView(parameterView);
+	}
 		settingLayout->AddItem(BSpaceLayoutItem::CreateHorizontalStrut(10));
 		layout->AddView(settingView);
-	}
+
 
 	// Add the sub-group views
 /*	for (int32 i = 0; i < group.size(); i++) {
@@ -159,29 +163,26 @@ ConfigManager::MakeViewFor(GMessage& config)
 	switch (type) {
 		case B_BOOL_TYPE:
 		{
-			BCheckBox* cb = new BCheckBox(config["key"], config["description"], NULL);
+			BCheckBox* cb = new BCheckBox(config["key"], config["label"], NULL);
 			cb->SetValue(storage[config["key"]] ? 1 : 0);
 			return cb;
-
 		}
-
 		case B_INT32_TYPE:
 		{
 			//TODO: handle the 'mode'
-			BSpinner* sp = new BSpinner(config["key"], config["description"], NULL);
+			BSpinner* sp = new BSpinner(config["key"], config["label"], NULL);
 			sp->SetValue(storage[config["key"]]);
-			GMessage extra = config["extra"];
-			if (extra.Has("max"))
-				sp->SetMaxValue(extra["max"]);
-			if (extra.Has("min"))
-				sp->SetMinValue(extra["min"]);
+			if (config.Has("max"))
+				sp->SetMaxValue(config["max"]);
+			if (config.Has("min"))
+				sp->SetMinValue(config["min"]);
 			return sp;
 		}
 
 		case B_STRING_TYPE:
 		{
 			//TODO: handle the 'mode'
-			return new BTextControl(config["key"], config["description"], storage[config["key"]], NULL);
+			return new BTextControl(config["key"], config["label"], storage[config["key"]], NULL);
 		}
 /*
 		default:

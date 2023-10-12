@@ -20,17 +20,17 @@ App::ReadyToRun()
 	ConfigManager cfg;
 
 	GMessage powerExtra = {{ {"min", 0}, {"max", 100} }};
-	cfg.AddConfig("power", "Energy to use", 75, &powerExtra);
+	cfg.AddConfig("g1", "power", "Energy to use", 75, &powerExtra);
 
 	GMessage compilerExtra = {{ {"mode", "choise"} }};
 	compilerExtra["choice_1"]["value"] = "gcc";
-	compilerExtra["choice_1"]["description"] = "gcc";
+	compilerExtra["choice_1"]["label"] = "gcc";
 	compilerExtra["choice_2"]["value"] = "clang";
-	compilerExtra["choice_2"]["description"] = "CLang Compiler";
+	compilerExtra["choice_2"]["label"] = "CLang Compiler";
 
-	cfg.AddConfig("compiler", "Compiler to use", "gcc", &compilerExtra);
+	cfg.AddConfig("g1","compiler", "Compiler to use", "gcc", &compilerExtra);
 
-	cfg.AddConfig("active", "Use new engine", true);
+	cfg.AddConfig("g1","active", "Use new engine", true);
 	cfg.ResetToDefault();
 
 	cfg.Print();
