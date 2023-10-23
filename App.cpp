@@ -6,6 +6,7 @@
 
 #include "App.h"
 #include "ConfigManager.h"
+#include "ConfigWindow.h"
 
 App::App(): BApplication("application/x-vnd.message-config")
 {
@@ -129,10 +130,9 @@ App::ReadyToRun()
 
 	cfg.Print();
 
-	 BWindow* window = new BWindow(BRect(100, 100, 700, 500), "test", B_TITLED_WINDOW,
-		 B_ASYNCHRONOUS_CONTROLS|B_NOT_RESIZABLE|B_NOT_ZOOMABLE|B_QUIT_ON_WINDOW_CLOSE);
+	 BWindow* window = new ConfigWindow(cfg);
 	 window->SetLayout(new BGroupLayout(B_HORIZONTAL));
-	 window->AddChild(cfg.MakeView());
+	 //window->AddChild(cfg.MakeView2());
 	 window->Show();
 
 

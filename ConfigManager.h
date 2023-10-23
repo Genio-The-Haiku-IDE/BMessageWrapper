@@ -76,7 +76,10 @@ public:
 			return (msg.GetInfo(key, &type) == B_OK);
 		}
 
+		GMessage&	Configuration() { return configuration; }
+
 		BView* MakeView();
+		//BView* MakeView2();
 		BView* MakeViewFor(const char* groupName, GMessage& config);
 		BView* MakeSelfHostingViewFor(GMessage& config);
 		BView* MakeViewFor(GMessage& config);
@@ -86,6 +89,8 @@ protected:
 		GMessage storage;
 		GMessage configuration;
 		BLocker	 fLocker;
+
+
 };
 
 
