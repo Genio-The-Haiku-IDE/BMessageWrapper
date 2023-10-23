@@ -12,8 +12,65 @@
 #include <GroupView.h>
 #include <Layout.h>
 #include <SpaceLayoutItem.h>
-#include <list>
 #include <map>
+#include <Control.h>
+#include <MessageFilter.h>
+#include <CheckBox.h>
+#include <Spinner.h>
+#include <TextControl.h>
+
+class ConfigManager;
+
+#define ON_NEW_VALUE	'ONVA'
+
+template<class C, typename T>
+class GControl : public C {
+public:
+		GControl(GMessage& msg, T value, ConfigManager* cfg):fConfigManager(cfg),
+			C("", "", nullptr){
+				C::SetName(msg["key"]);
+				C::SetLabel(msg["label"]);
+				GMessage* invoke = new GMessage(ON_NEW_VALUE);
+				(*invoke)["key"] = msg["key"];
+				C::SetMessage(invoke);
+
+				LoadValue(value);
+			}
+
+		void AttachedToWindow() {
+			C::AttachedToWindow();
+			C::SetTarget(this);
+		}
+		void MessageReceived(BMessage* msg) {
+			if (msg->what == ON_NEW_VALUE) {
+				GMessage& gsm = *((GMessage*)msg);
+				RetriveValue(gsm);
+				fConfigManager->UpdateValue(gsm);
+			}
+			C::MessageReceived(msg);
+		}
+
+		void RetriveValue(GMessage& dest) {
+			dest["value"] = (T)C::Value();
+		}
+
+		void LoadValue(T config) {
+			C::SetValue(config["value"]);
+		}
+
+private:
+		ConfigManager*	fConfigManager;
+};
+
+template<>
+void GControl<BTextControl, const char*>::RetriveValue(GMessage& dest) {
+	dest["value"] = BTextControl::Text();
+}
+template<>
+void GControl<BTextControl, const char*>::LoadValue(const char* value) {
+	BTextControl::SetText(value);
+}
+
 BView*
 ConfigManager::MakeView()
 {
@@ -27,16 +84,16 @@ ConfigManager::MakeView()
 	GMessage msg;
 	int i=0;
 	while(configuration.FindMessage("config", i++, &msg) == B_OK)  {
-		//printf("Adding for %s\n", (const char*)msg["group"]);
+		//printf("Adding for %s -> %s\n", (const char*)msg["group"], (const char*)msg["label"]);
 		divededByGroup[(const char*)msg["group"]].AddMessage("config", &msg);
 	}
-
 	std::map<std::string, GMessage>::iterator iter = divededByGroup.begin();
 	while(iter != divededByGroup.end())  {
-		printf("Working for %s\n", iter->first.c_str());
+	//iter->second.PrintToStream();
+		//printf("Working for %s\n", iter->first.c_str());
 		BView *groupView = MakeViewFor(iter->first.c_str(), iter->second);
 		if (groupView == NULL) {
-			printf("Skipping for %s\n", iter->first.c_str());
+			//printf("Skipping for %s\n", iter->first.c_str());
 			continue;
 		}
 
@@ -82,17 +139,21 @@ ConfigManager::MakeViewFor(const char* groupName, GMessage& list)
 
 	GMessage msg;
 	int i=0;
-	while(configuration.FindMessage("config", i++, &msg) == B_OK)  {
+	while(list.FindMessage("config", i++, &msg) == B_OK)  {
 
-//			std::cout << "Setting name: " << setting << std::endl;
 		BView *parameterView = MakeSelfHostingViewFor(msg);
 		if (parameterView == NULL)
 			return nullptr;
 
 		settingLayout->AddView(parameterView);
+		if (dynamic_cast<BControl*>(parameterView)) {
+			//dynamic_cast<BControl*>(parameterView)->SetTarget(this);
+		}
+
 	}
 		settingLayout->AddItem(BSpaceLayoutItem::CreateHorizontalStrut(10));
 		layout->AddView(settingView);
+
 
 
 	// Add the sub-group views
@@ -152,9 +213,7 @@ ConfigManager::MakeSelfHostingViewFor(GMessage& config)
 	return view;
 }
 
-#include <CheckBox.h>
-#include <Spinner.h>
-#include <TextControl.h>
+
 
 BView*
 ConfigManager::MakeViewFor(GMessage& config)
@@ -163,15 +222,14 @@ ConfigManager::MakeViewFor(GMessage& config)
 	switch (type) {
 		case B_BOOL_TYPE:
 		{
-			BCheckBox* cb = new BCheckBox(config["key"], config["label"], NULL);
-			cb->SetValue(storage[config["key"]] ? 1 : 0);
+			BCheckBox* cb = new GControl<BCheckBox, bool>(config, (*this)[config["key"]], this);
 			return cb;
 		}
 		case B_INT32_TYPE:
 		{
 			//TODO: handle the 'mode'
-			BSpinner* sp = new BSpinner(config["key"], config["label"], NULL);
-			sp->SetValue(storage[config["key"]]);
+			BSpinner* sp = new GControl<BSpinner, int32>(config, (*this)[config["key"]], this);
+			sp->SetValue((*this)[config["key"]]);
 			if (config.Has("max"))
 				sp->SetMaxValue(config["max"]);
 			if (config.Has("min"))
@@ -182,7 +240,7 @@ ConfigManager::MakeViewFor(GMessage& config)
 		case B_STRING_TYPE:
 		{
 			//TODO: handle the 'mode'
-			return new BTextControl(config["key"], config["label"], storage[config["key"]], NULL);
+			return new GControl<BTextControl, const char*>(config, (*this)[config["key"]], this);
 		}
 /*
 		default:

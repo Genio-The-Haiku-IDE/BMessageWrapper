@@ -1,13 +1,37 @@
 #pragma once
 #include "GMessage.h"
-
+#include <Autolock.h>
 class BView;
-class BControl;
+
+
+class ConfigManagerReturn {
+public:
+		ConfigManagerReturn(GMessage& msg, const char* key, BLocker& lock):
+			fMsg(msg),
+			fKey(key),
+			fLocker(lock){
+		}
+
+		template< typename Return >
+        operator Return() { BAutolock lock(fLocker); return fMsg[fKey]; };
+private:
+	GMessage& fMsg;
+	const char* fKey;
+	BLocker& fLocker;
+};
 
 class ConfigManager {
 
 public:
-		void	Init();
+		explicit ConfigManager(){
+			fLocker.InitCheck();
+		}
+
+		void UpdateValue(GMessage&newValue) {
+			BAutolock lock(fLocker);
+			storage[newValue["key"]] = newValue["value"];
+			//printf("Updated: "); newValue.PrintToStream();
+		}
 
 		template<typename T>
 		void AddConfig(const char* group, const char* key, const char* label, T default_value, GMessage* cfg = nullptr) {
@@ -41,13 +65,13 @@ public:
 			configuration.PrintToStream();
 		}
 
-		auto operator[](const char* key) {
+		auto operator[](const char* key) -> ConfigManagerReturn {
 			type_code type;
 			if (storage.GetInfo(key, &type) != B_OK) {
 				printf("No info for key [%s]\n", key);
 				throw new std::exception();
 			}
-			return storage[key];
+			return ConfigManagerReturn(storage, key, fLocker);
 		}
 
 		bool Has(GMessage& msg, const char* key) {
@@ -64,4 +88,7 @@ public:
 protected:
 		GMessage storage;
 		GMessage configuration;
+		BLocker	 fLocker;
 };
+
+

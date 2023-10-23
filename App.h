@@ -14,4 +14,5 @@ class App: public BApplication {
 public:
 	App();
 	virtual void ReadyToRun();
+	virtual void MessageReceived(BMessage* msg);
 };

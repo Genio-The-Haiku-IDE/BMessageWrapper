@@ -11,64 +11,77 @@ App::App(): BApplication("application/x-vnd.message-config")
 {
 }
 
+void
+App::MessageReceived(BMessage* msg) {
+	//debugger("App");
+	BApplication::MessageReceived(msg);
+}
 
+
+#define B_TRANSLATE(X) X
+
+void
+PrepareConfig(ConfigManager& cfg) {
+
+	cfg.AddConfig("General", "projects_directory", B_TRANSLATE("Projects folder:"), "/boot/home/workspace");
+	cfg.AddConfig("General", "fullpath_title", B_TRANSLATE("Show full path in window title"), true);
+
+	cfg.AddConfig("Startup", "reopen_projects", B_TRANSLATE("Reload projects"), true);
+	cfg.AddConfig("Startup", "reopen_files", B_TRANSLATE("Reload files"), true);
+	cfg.AddConfig("Startup", "show_projects", B_TRANSLATE("Show projects pane"), true);
+	cfg.AddConfig("Startup", "show_output", B_TRANSLATE("Show output pane"), true);
+	cfg.AddConfig("Startup", "show_toolbar", B_TRANSLATE("Show toolbar"), true);
+
+
+	cfg.AddConfig("Editor", "edit_fontsize", B_TRANSLATE("Font size:"), -1);
+
+/*
+
+	status += file.SetInt32("edit_fontsize", Settings.edit_fontsize);
+	status += file.SetInt32("syntax_highlight", Settings.syntax_highlight);
+	status += file.SetInt32("tab_width", Settings.tab_width);
+	status += file.SetInt32("brace_match", Settings.brace_match);
+	status += file.SetInt32("save_caret", Settings.save_caret);
+	status += file.SetInt32("show_linenumber", Settings.show_linenumber);
+	status += file.SetInt32("show_commentmargin", Settings.show_commentmargin);
+	status += file.SetInt32("mark_caretline", Settings.mark_caretline);
+	status += file.SetInt32("show_edgeline", Settings.show_edgeline);
+	status += file.SetString("edgeline_column", Settings.edgeline_column);
+	status += file.SetInt32("enable_folding", Settings.enable_folding);
+	status += file.SetInt32("enable_notifications", Settings.enable_notifications);
+	status += file.SetInt32("wrap_console", Settings.wrap_console);
+	status += file.SetInt32("console_banner", Settings.console_banner);
+	status += file.SetInt32("build_on_save", Settings.build_on_save);
+	status += file.SetInt32("save_on_build", Settings.save_on_build);
+	status += file.SetInt32("editor_zoom", Settings.editor_zoom);
+	status += file.SetBool("find_wrap", 	  Settings.find_wrap);
+	status += file.SetBool("find_whole_word", Settings.find_whole_word);
+	status += file.SetBool("find_match_case", Settings.find_match_case);
+	status += file.SetInt32("log_destination", Settings.log_destination);
+	status += file.SetInt32("log_level", Settings.log_level);
+	status += file.SetInt32("trim_trailing_whitespace", Settings.trim_trailing_whitespace);
+*/
+}
+
+ConfigManager cfg;
 
 void
 App::ReadyToRun()
  {
 	//	Initialization
-	ConfigManager cfg;
+	//ConfigManager* cfg = new ConfigManager();
+	PrepareConfig(cfg);
 
-	GMessage powerExtra = {{ {"min", 0}, {"max", 100} }};
-	cfg.AddConfig("g1", "power", "Energy to use", 75, &powerExtra);
+	cfg.ResetToDefault(); //!
 
-	GMessage compilerExtra = {{ {"mode", "choise"} }};
-	compilerExtra["choice_1"]["value"] = "gcc";
-	compilerExtra["choice_1"]["label"] = "gcc";
-	compilerExtra["choice_2"]["value"] = "clang";
-	compilerExtra["choice_2"]["label"] = "CLang Compiler";
+	//printf("Test access: %s\n", (const char*)cfg["projects_directory"]);
 
-	cfg.AddConfig("g1","compiler", "Compiler to use", "gcc", &compilerExtra);
+//	cfg->Run();
 
-	cfg.AddConfig("g1","active", "Use new engine", true);
-	cfg.ResetToDefault();
+	//Invalid access
+	//cfg["save_on_build"] = false;
 
-	cfg.Print();
-
-
-
-	// Settings settings;
-	// settings.AddBoolSetting("test bool", "Bool 1", true, "first");
-	// settings.AddIntSetting("test int", "Int 1", 99, "first");
-	// settings.AddStringSetting("test string", "String", "foobar", "first");
-	//
-	// settings.AddBoolSetting("test bool 2", "Boolean 2", false, "second");
-	// settings.AddIntSetting("test int 2", "INT 2", 99, "second");
-	// settings.AddStringSetting("test string 2", "Test String 2", "foobar", "second");
-	// status_t status = settings.Initialize();
-	// if (status != B_OK) {
-		// std::cerr << "Failed to initialize settings: " << ::strerror(status) << std::endl;
-		// exit(-1);
-	// }
-	//
-	//Load from file
-	// settings.Load("/home/settings_test");
-	//
-	//Usage
-	// bool test = settings.GetBool("test bool");
-	// assert(test == true);
-	//
-	// settings.SetBool("test bool", false);
-	// test = settings.GetBool("test bool");
-	// assert(test == false);
-	//
-	// int32 intValue = settings.GetInt("test int");
-	// assert(intValue == 99);
-	//
-	// BString stringValue = settings.GetString("test string");
-	// assert(strcmp(stringValue.String(), "foobar") == 0);
-
-	 BWindow* window = new BWindow(BRect(100, 100, 400, 400), "test", B_TITLED_WINDOW,
+	 BWindow* window = new BWindow(BRect(100, 100, 500, 500), "test", B_TITLED_WINDOW,
 		 B_ASYNCHRONOUS_CONTROLS|B_NOT_RESIZABLE|B_NOT_ZOOMABLE|B_QUIT_ON_WINDOW_CLOSE);
 	 window->SetLayout(new BGroupLayout(B_HORIZONTAL));
 	 window->AddChild(cfg.MakeView());
