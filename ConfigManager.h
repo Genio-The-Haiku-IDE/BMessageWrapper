@@ -30,7 +30,7 @@ public:
 		void UpdateValue(GMessage&newValue) {
 			BAutolock lock(fLocker);
 			storage[newValue["key"]] = newValue["value"];
-			//printf("Updated: "); newValue.PrintToStream();
+			printf("Updated: "); newValue.PrintToStream();
 		}
 
 		template<typename T>
@@ -46,9 +46,6 @@ public:
 			configKey["type_code"] 		= MessageValue<T>::Type();
 
 			configuration.AddMessage("config", &configKey);
-
-			configKey.PrintToStream();
-
 		}
 
 

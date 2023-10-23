@@ -28,13 +28,15 @@ class GControl : public C {
 public:
 		GControl(GMessage& msg, T value, ConfigManager* cfg):fConfigManager(cfg),
 			C("", "", nullptr){
+
 				C::SetName(msg["key"]);
 				C::SetLabel(msg["label"]);
+				LoadValue(value);
+
 				GMessage* invoke = new GMessage(ON_NEW_VALUE);
 				(*invoke)["key"] = msg["key"];
-				C::SetMessage(invoke);
 
-				LoadValue(value);
+				C::SetMessage(invoke);
 			}
 
 		void AttachedToWindow() {
@@ -54,8 +56,8 @@ public:
 			dest["value"] = (T)C::Value();
 		}
 
-		void LoadValue(T config) {
-			C::SetValue(config["value"]);
+		void LoadValue(T value) {
+			C::SetValue(value);
 		}
 
 private:
@@ -213,7 +215,7 @@ ConfigManager::MakeSelfHostingViewFor(GMessage& config)
 	return view;
 }
 
-
+#include <OptionPopUp.h>
 
 BView*
 ConfigManager::MakeViewFor(GMessage& config)
@@ -227,14 +229,30 @@ ConfigManager::MakeViewFor(GMessage& config)
 		}
 		case B_INT32_TYPE:
 		{
-			//TODO: handle the 'mode'
-			BSpinner* sp = new GControl<BSpinner, int32>(config, (*this)[config["key"]], this);
-			sp->SetValue((*this)[config["key"]]);
-			if (config.Has("max"))
-				sp->SetMaxValue(config["max"]);
-			if (config.Has("min"))
-				sp->SetMinValue(config["min"]);
-			return sp;
+			if (config.Has("mode")) {
+				if (BString((const char*)config["mode"]).Compare("options") == 0){
+
+					BOptionPopUp* popUp = new GControl<BOptionPopUp, int32>(config, (*this)[config["key"]], this);
+					int32 c=1;
+					while(true) {
+						BString key("option_");
+						key << c;
+						if (!config.Has(key.String()))
+							break;
+						popUp->AddOption(config[key.String()]["label"], config[key.String()]["value"]);
+						c++;
+					}
+					return popUp;
+				}
+			} else {
+				BSpinner* sp = new GControl<BSpinner, int32>(config, (*this)[config["key"]], this);
+				sp->SetValue((*this)[config["key"]]);
+				if (config.Has("max"))
+					sp->SetMaxValue(config["max"]);
+				if (config.Has("min"))
+					sp->SetMinValue(config["min"]);
+				return sp;
+			}
 		}
 
 		case B_STRING_TYPE:
