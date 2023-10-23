@@ -19,12 +19,53 @@ App::MessageReceived(BMessage* msg) {
 
 
 #define B_TRANSLATE(X) X
+//fix me:
+struct Logger {
+	enum LOGGER_DEST {
+		LOGGER_DEST_STDOUT = 0,
+		LOGGER_DEST_STDERR = 1,
+		LOGGER_DEST_SYSLOG = 2,
+		LOGGER_DEST_BEDC   = 3
+	};
+};
+
+typedef enum log_level {
+	LOG_LEVEL_UNSET		= -1,
+	LOG_LEVEL_OFF		= 1,
+	LOG_LEVEL_ERROR		= 2,
+	LOG_LEVEL_INFO		= 3,
+	LOG_LEVEL_DEBUG		= 4,
+	LOG_LEVEL_TRACE		= 5
+} log_level;
 
 void
 PrepareConfig(ConfigManager& cfg) {
 
 	cfg.AddConfig("General", "projects_directory", B_TRANSLATE("Projects folder:"), "/boot/home/workspace");
 	cfg.AddConfig("General", "fullpath_title", B_TRANSLATE("Show full path in window title"), true);
+	GMessage loggers = {{ {"mode", "options"} }};
+	loggers["option_1"]["value"] = (int32)Logger::LOGGER_DEST_STDOUT;
+	loggers["option_1"]["label"] = "Stdout";
+	loggers["option_2"]["value"] = (int32)Logger::LOGGER_DEST_STDERR;
+	loggers["option_2"]["label"] = "Stderr";
+	loggers["option_3"]["value"] = (int32)Logger::LOGGER_DEST_SYSLOG;
+	loggers["option_3"]["label"] = "Syslog";
+	loggers["option_4"]["value"] = (int32)Logger::LOGGER_DEST_BEDC;
+	loggers["option_4"]["label"] = "BeDC";
+	cfg.AddConfig("General", "log_destination", B_TRANSLATE("Log destination:"), (int32)Logger::LOGGER_DEST_STDOUT, &loggers);
+
+	GMessage levels = {{ {"mode", "options"} }};
+	levels["option_1"]["value"] = (int32)LOG_LEVEL_OFF;
+	levels["option_1"]["label"] = "Off";
+	levels["option_2"]["value"] = (int32)LOG_LEVEL_ERROR;
+	levels["option_2"]["label"] = "Error";
+	levels["option_3"]["value"] = (int32)LOG_LEVEL_INFO;
+	levels["option_3"]["label"] = "Info";
+	levels["option_4"]["value"] = (int32)LOG_LEVEL_DEBUG;
+	levels["option_4"]["label"] = "Debug";
+	levels["option_5"]["value"] = (int32)LOG_LEVEL_TRACE;
+	levels["option_5"]["label"] = "Trace";
+	cfg.AddConfig("General", "log_level", B_TRANSLATE("Log level:"), (int32)LOG_LEVEL_ERROR, &levels);
 
 	cfg.AddConfig("Startup", "reopen_projects", B_TRANSLATE("Reload projects"), true);
 	cfg.AddConfig("Startup", "reopen_files", B_TRANSLATE("Reload files"), true);
@@ -54,6 +95,8 @@ PrepareConfig(ConfigManager& cfg) {
 	cfg.AddConfig("Editor", "trim_trailing_whitespace", B_TRANSLATE("Trim trailing whitespace on save"), false);
 	GMessage tabs = {{ {"min",1},{"max",8} }};
 	cfg.AddConfig("Editor", "tab_width", B_TRANSLATE("Tab width:  "), 4, &tabs);
+	GMessage zooms = {{ {"min", -9}, {"max", 19} }};
+	cfg.AddConfig("Editor", "editor_zoom", B_TRANSLATE("Editor zoom:"), 0, &zooms);
 
 	cfg.AddConfig("Visual", "show_linenumber", B_TRANSLATE("Show line number"), true);
 	cfg.AddConfig("Visual", "show_commentmargin", B_TRANSLATE("Show comment margin"), true);
@@ -70,14 +113,10 @@ PrepareConfig(ConfigManager& cfg) {
 	cfg.AddConfig("Build", "build_on_save",  B_TRANSLATE("Build target on resource save"), false);
 	cfg.AddConfig("Build", "save_on_build",  B_TRANSLATE("Save changed files on build"), false);
 
-/*
-	status += file.SetInt32("editor_zoom", Settings.editor_zoom);
-	status += file.SetBool("find_wrap", 	  Settings.find_wrap);
-	status += file.SetBool("find_whole_word", Settings.find_whole_word);
-	status += file.SetBool("find_match_case", Settings.find_match_case);
-	status += file.SetInt32("log_destination", Settings.log_destination);
-	status += file.SetInt32("log_level", Settings.log_level);
-*/
+	//New config, in Genio currently without a UI
+	cfg.AddConfig("Find", "find_wrap", "FIXME: Wrap", false);
+	cfg.AddConfig("Find", "find_whole_word", "FIXME: Whole word", false);
+	cfg.AddConfig("Find", "find_match_case", "FIXME: Match case", false);
 }
 
 ConfigManager cfg;
@@ -85,24 +124,16 @@ ConfigManager cfg;
 void
 App::ReadyToRun()
  {
-	//	Initialization
-	//ConfigManager* cfg = new ConfigManager();
 	PrepareConfig(cfg);
-
-	cfg.ResetToDefault(); //!
+	cfg.ResetToDefault(); // !important
 
 	cfg.Print();
 
-	//printf("Test access: %s\n", (const char*)cfg["projects_directory"]);
-
-//	cfg->Run();
-
-	//Invalid access
-	//cfg["save_on_build"] = false;
-
-	 BWindow* window = new BWindow(BRect(100, 100, 500, 500), "test", B_TITLED_WINDOW,
+	 BWindow* window = new BWindow(BRect(100, 100, 700, 500), "test", B_TITLED_WINDOW,
 		 B_ASYNCHRONOUS_CONTROLS|B_NOT_RESIZABLE|B_NOT_ZOOMABLE|B_QUIT_ON_WINDOW_CLOSE);
 	 window->SetLayout(new BGroupLayout(B_HORIZONTAL));
 	 window->AddChild(cfg.MakeView());
 	 window->Show();
+
+
 }
