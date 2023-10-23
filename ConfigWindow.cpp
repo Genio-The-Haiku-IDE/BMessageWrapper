@@ -78,7 +78,7 @@ BView*
 ConfigWindow::_Init() {
 	BView* theView = new BView("theView", B_WILL_DRAW);
 	// Add the translators list view
-	fGroupList = new BListView("TransList");
+	fGroupList = new BOutlineListView("Groups");
 	fGroupList->SetSelectionMessage(new BMessage(ITEM_SELECTED));
 
 	BScrollView* scrollView = new BScrollView("scroll_trans",
@@ -117,8 +117,12 @@ ConfigWindow::MessageReceived(BMessage* message)
 {
 	if (message->what == ITEM_SELECTED) {
 		int32 index = message->GetInt32("index", 0);
-		if (index >= 0)
-			fCardView->CardLayout()->SetVisibleItem(index);
+		message->PrintToStream();
+		if (index >= 0) {
+			BStringItem* item = (BStringItem*)fGroupList->FullListItemAt(index);
+			BView* card = fCardView->FindView(item->Text());
+			fCardView->CardLayout()->SetVisibleItem(fCardView->CardLayout()->IndexOfView(card));
+		}
 		return;
 	}
 	BWindow::MessageReceived(message);
@@ -151,11 +155,29 @@ ConfigWindow::_PopulateListView()
 	while(iter != divededByGroup.end())  {
 		// printf("Working for %s ", (const char*)(*iter)["group"]);
 		// (*iter).PrintToStream();
-		fGroupList->AddItem(new BStringItem((const char*)(*iter)["group"]));
+
 
 		BView *groupView = MakeViewFor((const char*)(*iter)["group"], *iter);
+		groupView->SetName((const char*)(*iter)["group"]);
 		if (groupView != NULL) {
 			fCardView->AddChild(groupView);
+			BString groupName = (const char*)(*iter)["group"];
+			int position = groupName.FindFirstChars("/", 0);
+			if (position > 0) {
+				BString leaf;
+				groupName.CopyCharsInto(leaf,0,position);
+				groupName.Remove(0, position + 1);
+				for(int y=0;y<fGroupList->FullListCountItems();y++) {
+					BStringItem* item = (BStringItem*)fGroupList->FullListItemAt(y);
+					if (leaf.Compare(item->Text()) == 0) {
+						fGroupList->AddUnder(new BStringItem(groupName), item);
+						groupView->SetName(groupName);
+						break;
+					}
+				}
+			} else {
+				fGroupList->AddItem(new BStringItem(groupName));
+			}
 		}
 		iter++;
 	}

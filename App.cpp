@@ -68,11 +68,11 @@ PrepareConfig(ConfigManager& cfg) {
 	levels["option_5"]["label"] = "Trace";
 	cfg.AddConfig("General", "log_level", B_TRANSLATE("Log level:"), (int32)LOG_LEVEL_ERROR, &levels);
 
-	cfg.AddConfig("Startup", "reopen_projects", B_TRANSLATE("Reload projects"), true);
-	cfg.AddConfig("Startup", "reopen_files", B_TRANSLATE("Reload files"), true);
-	cfg.AddConfig("Startup", "show_projects", B_TRANSLATE("Show projects pane"), true);
-	cfg.AddConfig("Startup", "show_output", B_TRANSLATE("Show output pane"), true);
-	cfg.AddConfig("Startup", "show_toolbar", B_TRANSLATE("Show toolbar"), true);
+	cfg.AddConfig("General/Startup", "reopen_projects", B_TRANSLATE("Reload projects"), true);
+	cfg.AddConfig("General/Startup", "reopen_files", B_TRANSLATE("Reload files"), true);
+	cfg.AddConfig("General/Startup", "show_projects", B_TRANSLATE("Show projects pane"), true);
+	cfg.AddConfig("General/Startup", "show_output", B_TRANSLATE("Show output pane"), true);
+	cfg.AddConfig("General/Startup", "show_toolbar", B_TRANSLATE("Show toolbar"), true);
 
 	GMessage sizes;
 	sizes = {{ {"mode","options"} }};
@@ -99,13 +99,13 @@ PrepareConfig(ConfigManager& cfg) {
 	GMessage zooms = {{ {"min", -9}, {"max", 19} }};
 	cfg.AddConfig("Editor", "editor_zoom", B_TRANSLATE("Editor zoom:"), 0, &zooms);
 
-	cfg.AddConfig("Visual", "show_linenumber", B_TRANSLATE("Show line number"), true);
-	cfg.AddConfig("Visual", "show_commentmargin", B_TRANSLATE("Show comment margin"), true);
-	cfg.AddConfig("Visual", "mark_caretline", B_TRANSLATE("Mark caret line"), true);
-	cfg.AddConfig("Visual", "show_edgeline", B_TRANSLATE("Show edge line"), true);
-	cfg.AddConfig("Visual", "enable_folding", B_TRANSLATE("Enable folding"), true);
+	cfg.AddConfig("Editor/Visual", "show_linenumber", B_TRANSLATE("Show line number"), true);
+	cfg.AddConfig("Editor/Visual", "show_commentmargin", B_TRANSLATE("Show comment margin"), true);
+	cfg.AddConfig("Editor/Visual", "mark_caretline", B_TRANSLATE("Mark caret line"), true);
+	cfg.AddConfig("Editor/Visual", "show_edgeline", B_TRANSLATE("Show edge line"), true);
+	cfg.AddConfig("Editor/Visual", "enable_folding", B_TRANSLATE("Enable folding"), true);
 	GMessage limits = {{ {"min", 0}, {"max", 500} }};
-	cfg.AddConfig("Visual", "edgeline_column", B_TRANSLATE("Show edge line"), 80, &limits);
+	cfg.AddConfig("Editor/Visual", "edgeline_column", B_TRANSLATE("Show edge line"), 80, &limits);
 
 	cfg.AddConfig("Notifications", "enable_notifications", B_TRANSLATE("Enable notifications"), true);
 
@@ -115,9 +115,9 @@ PrepareConfig(ConfigManager& cfg) {
 	cfg.AddConfig("Build", "save_on_build",  B_TRANSLATE("Save changed files on build"), false);
 
 	//New config, in Genio currently without a UI
-	cfg.AddConfig("Find", "find_wrap", "FIXME: Wrap", false);
-	cfg.AddConfig("Find", "find_whole_word", "FIXME: Whole word", false);
-	cfg.AddConfig("Find", "find_match_case", "FIXME: Match case", false);
+	cfg.AddConfig("Editor/Find", "find_wrap", "FIXME: Wrap", false);
+	cfg.AddConfig("Editor/Find", "find_whole_word", "FIXME: Whole word", false);
+	cfg.AddConfig("Editor/Find", "find_match_case", "FIXME: Match case", false);
 }
 
 ConfigManager cfg;

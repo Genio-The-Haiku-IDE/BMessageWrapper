@@ -5,7 +5,7 @@
 #ifndef ConfigWindow_H
 #define ConfigWindow_H
 #include "GMessage.h"
-#include <ListView.h>
+#include <OutlineListView.h>
 #include <Box.h>
 #include <LayoutBuilder.h>
 #include <Button.h>
@@ -30,7 +30,7 @@ private:
 	BView*	_Init();
 	void _PopulateListView();
 
-	BListView* 	fGroupList;
+	BOutlineListView* 	fGroupList;
 	BButton* 	fButton;
 	BCardView* 	fCardView;
 
