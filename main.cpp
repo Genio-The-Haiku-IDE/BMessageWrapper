@@ -4,8 +4,8 @@
  */
 
 #include <stdio.h>
-#include "App.h"
-/*
+#include "GMessage.h"
+
 void testGMessage() {
 
  GMessage msg;
@@ -46,45 +46,15 @@ void testGMessage() {
  auto msg14 = new GMessage({{{ {"what", 12}, {"total", 1}, {"unread", 1}, {"new", 1} }}});
 }
 
-void
-testConfigManager() {
-	ConfigManager cfg;
-
-	GMessage powerExtra = {{ {"min", 0}, {"max", 100} }};
-	cfg.AddConfig("power", "Energy to use", 75, &powerExtra);
-
-	GMessage compilerExtra = {{ {"mode", "choise"} }};
-	compilerExtra["choice_1"]["value"] = "gcc";
-	compilerExtra["choice_1"]["description"] = "gcc";
-	compilerExtra["choice_2"]["value"] = "clang";
-	compilerExtra["choice_2"]["description"] = "CLang Compiler";
-
-	cfg.AddConfig("compiler", "Compiler to use", "gcc", &compilerExtra);
-
-	cfg.AddConfig("active", "Use new engine", false);
-	cfg.ResetToDefault();
-
-	cfg.Print();
-
-}
-
-*/
-
-int
-testApp(int argc, char **argv)
-{
-	App app;
-
-	app.Run();
-	return 0;
-}
-
+#include "GMessage2.h"
 int
 main(int argc, char **argv)
 {
 	//testGMessage();
 	//testConfigManager();
-	testApp(0, nullptr);
+	//testApp(0, nullptr);
+
+	main2();
 	return 0;
 }
 

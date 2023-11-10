@@ -23,10 +23,13 @@
 #pragma once
 #include <Message.h>
 //
+#include <cstring>
+#include <memory>
+#include <string>
 #include <variant>
 #include <vector>
-#include <string>
-#include <memory>
+
+#include <iostream>
 
 using generic_type = std::variant<bool, int32, const char*>;
 struct key_value {
@@ -37,10 +40,7 @@ struct key_value {
 using variant_list = std::vector<key_value>;
 
 class GMessageReturn;
-
-
 class GMessage : public BMessage {
-
 public:
 	explicit GMessage():BMessage() {};
 	explicit GMessage(uint32 what):BMessage(what){};
@@ -48,19 +48,25 @@ public:
 
 	auto operator[](const char* key) -> GMessageReturn;
 
-	bool Has(const char* key) {
+	bool Has(const char* key) const {
 		type_code type;
 		return (GetInfo(key, &type) == B_OK);
+	}
+
+	type_code Type(const char* key) const {
+		type_code type;
+		return (GetInfo(key, &type) == B_OK ? type : B_ANY_TYPE);
 	}
 
 private:
 	void _HandleVariantList(variant_list& list);
 };
 
+
 template<typename T>
 class MessageValue {
 public:
-	static T	Get(GMessage* msg, const char* key, T value){
+	static T	Get(GMessage* msg, const char* key){
 					T write_specific_converter;
 					return Unsupported_GetValue_for_GMessage(write_specific_converter);
 	}
@@ -82,7 +88,7 @@ public: \
 }; \
 
 
-#define MESSAGE_VALUE_REF(NAME, TYPE, typeCODE, DEFAULT) \
+#define MESSAGE_VALUE_REF(NAME, TYPE, typeCODE) \
 template<> \
 class MessageValue<TYPE> { \
 public: \
@@ -99,13 +105,22 @@ public: \
 MESSAGE_VALUE(Bool, bool, B_BOOL_TYPE, false);
 MESSAGE_VALUE(String, const char*, B_STRING_TYPE, "");
 MESSAGE_VALUE(Int32, int32, B_INT32_TYPE, -1);
+
+#if __HAIKU_BEOS_COMPATIBLE_TYPES
+	// on Haiku x86_32 bit, due to this define, int32 is defined as
+	// "signed long int" instead of "signed int" like on other platforms
+	// so we need this extra line to handle "int".
+MESSAGE_VALUE(Int32, int, B_INT32_TYPE, -1);
+#endif
+
 MESSAGE_VALUE(UInt32, uint32, B_UINT32_TYPE, 0);
-MESSAGE_VALUE_REF(Message, GMessage, B_MESSAGE_TYPE, GMessage());
-MESSAGE_VALUE_REF(Message, BMessage, B_MESSAGE_TYPE, BMessage());
+MESSAGE_VALUE(Rect, BRect, B_RECT_TYPE, BRect());
+MESSAGE_VALUE_REF(Message, GMessage, B_MESSAGE_TYPE);
+MESSAGE_VALUE_REF(Message, BMessage, B_MESSAGE_TYPE);
 
 class GMessageReturn {
 public:
-		GMessageReturn(GMessage* msg, const char* key, GMessageReturn* parent = nullptr){
+		GMessageReturn(GMessage* msg, const char* key, GMessageReturn* parent = nullptr) {
 			fMsg=msg; fKey=key; fSyncParent = parent;
 		}
 
@@ -120,11 +135,11 @@ public:
         operator Return() { return MessageValue<Return>::Get(fMsg, fKey); };
 
 		template< typename T >
-		void operator =(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
+		void operator=(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
 
-		void operator =(variant_list n){
-				GMessage xmsg(n);
-				MessageValue<GMessage>::Set(fMsg, fKey, xmsg);
+		void operator=(variant_list n){
+			GMessage xmsg(n);
+			MessageValue<GMessage>::Set(fMsg, fKey, xmsg);
 		}
 
 		auto operator[](const char* key) -> GMessageReturn {
@@ -133,32 +148,63 @@ public:
 			return GMessageReturn(newMsg, key, this);
 		};
 
-		void operator =(GMessageReturn n) {
+		void operator=(const GMessageReturn& n) {
 			type_code typeFound;
-			if (n.fKey == fKey && fMsg == n.fMsg)
+			bool fixedSize;
+			if (fMsg == n.fMsg && strcmp(n.fKey, fKey) == 0)
 				return;
 
-			if (n.fMsg->GetInfo(n.fKey, &typeFound) == B_OK) {
-
+			if (n.fMsg->GetInfo(n.fKey, &typeFound, &fixedSize) == B_OK) {
 				const void* data = nullptr;
 				ssize_t numBytes = 0;
 				if (n.fMsg->FindData(n.fKey, typeFound, &data, &numBytes) == B_OK) {
-					fMsg->RemoveName(fKey); //remove the key
-					fMsg->SetData(fKey, typeFound, data, numBytes);
+					fMsg->RemoveData(fKey); //remove the key
+					fMsg->SetData(fKey, typeFound, data, numBytes, fixedSize);
 				}
 			}
 		}
 
-		void Print() {
-			fMsg->PrintToStream();
+		bool operator !=(const GMessageReturn& n) {
+			return !operator==(n);
 		}
 
+		bool operator ==(GMessageReturn n) {
+			type_code typeLeft;
+			type_code typeRight;
+			const void* dataLeft = nullptr;
+			const void* dataRight = nullptr;
+			ssize_t numBytesLeft = 0;
+			ssize_t numBytesRight = 0;
+
+			bool comparison = false;
+			if (n.fMsg->GetInfo(n.fKey, &typeRight) == B_OK &&
+				  fMsg->GetInfo(fKey, &typeLeft) == B_OK) {
+
+				if (typeLeft == typeRight &&
+					n.fMsg->FindData(n.fKey, typeRight, &dataRight, &numBytesRight) == B_OK &&
+					  fMsg->FindData(fKey, typeLeft, &dataLeft, &numBytesLeft) == B_OK) {
+
+					if (numBytesLeft == numBytesRight) {
+						comparison = (memcmp(dataRight, dataLeft, numBytesRight) == 0);
+					}
+				}
+			}
+
+			return comparison;
+		}
+
+		void Print() const {
+			fMsg->PrintToStream();
+		}
 private:
 		GMessage* fMsg;
 		const char* fKey;
 		GMessageReturn* fSyncParent;
 };
 
+// Stack Message
+GMessage* set_what(uint32 what, GMessage* gms);
+#define SMSG(WHAT, LIST...) set_what(WHAT, new GMessage({{{ LIST }}}))
 
-
-
+//BMessage wrapper
+#define BMSG(in, out) GMessage& out = *((GMessage*)in);
