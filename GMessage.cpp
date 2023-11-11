@@ -8,13 +8,12 @@
 
 void GMessage::_HandleVariantList(variant_list& list) {
 	MakeEmpty();
-	auto i = list.begin();
-	while(i != list.end()) {
-		std::visit([&] (const auto& k) {
-			(*this)[(*i).key] = k;
-		}, (*i).value);
-		i++;
-	}
+    for (auto &[k, v]: list)
+    {
+		std::visit([&] (const auto& z) {
+			(*this)[k.c_str()] = z;
+		}, *v);
+    }
 }
 
 auto GMessage::operator[](const char* key) -> GMessageReturn { return GMessageReturn(this, key); }

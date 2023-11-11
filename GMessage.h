@@ -2,7 +2,7 @@
  * Copyright 2023, Andrea Anzani <andrea.anzani@gmail.com>
  * All rights reserved. Distributed under the terms of the MIT license.
  */
- // Version 0.1
+ // Version 2
  // Requires C++17
  //
  // Example:
@@ -14,11 +14,11 @@
  //   printf("Points: %d\n", (int32)msg["points"]);
  //
  // brace-enclosed list:
- //  GMessage msg2 = {{ {"name", "Andrea"}, {"points", 1412}, {"active", true} }};
+ //  GMessage msg2 = { {"name", "Andrea"}, {"points", 1412}, {"active", true} };
  //
  // submessages:
  //	 GMessage msg3 = msg2;
- //	 msg["details"] = {{ {"id", 442}, {"cost", 78} }};
+ //	 msg["details"] = { {"id", 442}, {"cost", 78} };
 
 #pragma once
 #include <Message.h>
@@ -31,20 +31,23 @@
 
 #include <iostream>
 
-using generic_type = std::variant<bool, int32, const char*>;
-struct key_value {
-	const char* 	key;
-	generic_type	value;
+#define KV(T) kv_pair(const std::string &k, T v) : pair(k, std::make_shared<mapped_type>(v)) {}
 
-};
-using variant_list = std::vector<key_value>;
+#define SUPPORTED_1		int32, bool, const char*, GMessage
+#define SUPPORTED_2		KV(int32); KV(bool); KV(const char*); KV(GMessage);
 
 class GMessageReturn;
 class GMessage : public BMessage {
 public:
+
+  using mapped_type = std::variant<SUPPORTED_1>;
+  struct kv_pair : public std::pair<std::string, std::shared_ptr<mapped_type>> { SUPPORTED_2 };
+  using variant_list = std::initializer_list<kv_pair>;
+
+
 	explicit GMessage():BMessage() {};
 	explicit GMessage(uint32 what):BMessage(what){};
-	GMessage(variant_list n):BMessage() { _HandleVariantList(n); };
+	GMessage(variant_list n) { _HandleVariantList(n); };
 
 	auto operator[](const char* key) -> GMessageReturn;
 
@@ -137,7 +140,7 @@ public:
 		template< typename T >
 		void operator=(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
 
-		void operator=(variant_list n){
+		void operator=(GMessage::variant_list n){
 			GMessage xmsg(n);
 			MessageValue<GMessage>::Set(fMsg, fKey, xmsg);
 		}
