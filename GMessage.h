@@ -19,6 +19,17 @@
  // submessages:
  //	 GMessage msg3 = msg2;
  //	 msg["details"] = { {"id", 442}, {"cost", 78} };
+ //
+ //	GMessage levels3 = {
+ //		{"what", 'HOLA' },
+ //		{"mode", "options"},
+ //		{"option_1", {
+ //			{"what", 'HERE' },
+ //			{"value", (int32)0 },
+ //			{"label", "Off" }}}
+ //	};
+ //
+ // NOTE: the 'what' key with an int32 value, sets the message->what field!
 
 #pragma once
 #include <Message.h>
