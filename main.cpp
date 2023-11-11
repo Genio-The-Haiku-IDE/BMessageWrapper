@@ -77,6 +77,16 @@ void testGMessage() {
 			{"label", "Trace"}}}
 	};
 	levels2.PrintToStream();
+
+	GMessage levels3 = {
+		{"what", 'HOLA' },
+		{"mode", "options"},
+		{"option_1", {
+			{"what", 'HERE' },
+			{"value", (int32)0 },
+			{"label", "Off" }}}
+	};
+	levels3.PrintToStream();
 }
 
 

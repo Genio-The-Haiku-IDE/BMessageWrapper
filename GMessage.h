@@ -138,7 +138,11 @@ public:
         operator Return() { return MessageValue<Return>::Get(fMsg, fKey); };
 
 		template< typename T >
-		void operator=(T n) { MessageValue<T>::Set(fMsg, fKey, n); }
+		void operator=(T n) { if (!is_what(n)) MessageValue<T>::Set(fMsg, fKey, n); }
+
+		template<typename T>
+		bool is_what(T n) { return false; }
+
 
 		void operator=(GMessage::variant_list n){
 			GMessage xmsg(n);
