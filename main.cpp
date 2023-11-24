@@ -107,14 +107,17 @@ testPointer()
 	std::vector<int>* x = (std::vector<int>*)(void*)point["pointer"];
 	printf("Vector: %d (%x)\n", x->front(), x);
 
-	auto k = point["pointer"];
+}
+#include <Path.h>
+void testRef()
+{
+	entry_ref r;
+	BEntry p("/boot/home");
+	p.GetRef(&r);
+	GMessage g {{"ref", r}};
+	g["path"] = r;
 
-	long ll = k;
-/*
-	point = {{ "vector", x}};
-	x = nullptr;
-//	std::vector<std::string>* k = (std::vector<std::string>*)point["vector"];
-	printf("Vector: %d (%x)\n", v->front(), k);*/
+	g.PrintToStream();
 }
 
 #include <String.h>
@@ -142,7 +145,7 @@ main(int argc, char **argv)
 	testGMessage();
 	*/
 	testPointer();
-
+	testRef();
 	//magic();
 	return 0;
 }

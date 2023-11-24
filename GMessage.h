@@ -44,8 +44,8 @@
 
 #define KV(T) kv_pair(const std::string &k, T v) : pair(k, std::make_shared<mapped_type>(v)) {}
 
-#define SUPPORTED_1		int32, bool, const char*, BString, GMessage, void*
-#define SUPPORTED_2		KV(int32); KV(bool); KV(const char*); KV(BString); KV(GMessage); KV(void*)
+#define SUPPORTED_1		int32, bool, const char*, BString, GMessage, void*, entry_ref
+#define SUPPORTED_2		KV(int32); KV(bool); KV(const char*); KV(BString); KV(GMessage); KV(void*); KV(entry_ref);
 
 class GMessageReturn;
 class GMessage : public BMessage {
