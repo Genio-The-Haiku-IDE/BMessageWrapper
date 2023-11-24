@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Your Name <your@email.address>
+ * Copyright 2023, Andrea Anzani <andrea.anzani@gmail.com>
  * All rights reserved. Distributed under the terms of the MIT license.
  */
 
@@ -17,9 +17,6 @@ void GMessage::_HandleVariantList(variant_list& list) {
 }
 
 auto GMessage::operator[](const char* key) -> GMessageReturn { return GMessageReturn(this, key); }
-
-
-GMessage* set_what(uint32 what, GMessage* gms) { gms->what = what; return gms; }
 
 template<>
 bool

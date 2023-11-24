@@ -89,11 +89,61 @@ void testGMessage() {
 	levels3.PrintToStream();
 }
 
+#include <vector>
 
+void
+testPointer()
+{
+	std::vector<int>* v = new std::vector<int>();
+	v->push_back(2023);
+	GMessage point;
+	point["pointer"] = (void*)v;
+
+
+	printf("Vector: %d (%x)\n", v->front(), v);
+	v = nullptr;
+	//point.PrintToStream();
+
+	std::vector<int>* x = (std::vector<int>*)(void*)point["pointer"];
+	printf("Vector: %d (%x)\n", x->front(), x);
+
+	auto k = point["pointer"];
+
+	long ll = k;
+/*
+	point = {{ "vector", x}};
+	x = nullptr;
+//	std::vector<std::string>* k = (std::vector<std::string>*)point["vector"];
+	printf("Vector: %d (%x)\n", v->front(), k);*/
+}
+
+#include <String.h>
+
+#include "magic.h"
 int
 main(int argc, char **argv)
 {
+/*
+	BMessage test;
+	BString msg = "Test Value";
+
+	printf("Before: [%s]\n", msg.String());
+
+	test.AddData("result", B_ANY_TYPE, &msg, sizeof(BString));
+
+	test.PrintToStream();
+
+	BString* dead = nullptr;
+	ssize_t len;
+	test.FindData("result", B_ANY_TYPE, (const void**)&dead, &len);
+
+	printf("After: [%s]\n", dead->String());
+
 	testGMessage();
+	*/
+	testPointer();
+
+	//magic();
 	return 0;
 }
 
